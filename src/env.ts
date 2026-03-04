@@ -20,7 +20,6 @@ export const env = createEnv({
     // ── AI Providers (optional — models hidden if key missing) ──
     GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
     GROQ_API_KEY: z.string().optional(),
-    OPENAI_API_KEY: z.string().optional(),
     OPENROUTER_API_KEY: z.string().optional(),
 
     // ── Infrastructure ────────────────────────────────────
@@ -37,7 +36,6 @@ export const env = createEnv({
     AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
     GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,

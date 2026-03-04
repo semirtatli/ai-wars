@@ -8,15 +8,13 @@
  * will be available in the UI.
  *
  * Provider architecture:
- * - Google: @ai-sdk/google (Gemini models)
+ * - Google: @ai-sdk/google (Gemini models — direct API)
  * - Groq: @ai-sdk/groq (Llama, Mixtral, Gemma — ultra-fast inference)
- * - OpenAI: @ai-sdk/openai (GPT-4o, GPT-4o-mini)
- * - OpenRouter: @openrouter/ai-sdk-provider (aggregated access to many models)
+ * - OpenRouter: @openrouter/ai-sdk-provider (Claude, GPT, Qwen, Mistral, DeepSeek, etc.)
  */
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createGroq } from '@ai-sdk/groq';
-import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { LanguageModel } from 'ai';
 
@@ -30,8 +28,6 @@ function getProviderKey(providerId: ProviderId): string | undefined {
       return process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     case 'groq':
       return process.env.GROQ_API_KEY;
-    case 'openai':
-      return process.env.OPENAI_API_KEY;
     case 'openrouter':
       return process.env.OPENROUTER_API_KEY;
     default:
@@ -41,7 +37,7 @@ function getProviderKey(providerId: ProviderId): string | undefined {
 
 /** Returns provider IDs that have a configured API key */
 export function getAvailableProviders(): ProviderId[] {
-  const all: ProviderId[] = ['google', 'groq', 'openai', 'openrouter'];
+  const all: ProviderId[] = ['google', 'groq', 'openrouter'];
   return all.filter((p) => !!getProviderKey(p));
 }
 
@@ -80,8 +76,6 @@ function createProviderInstance(providerId: ProviderId) {
       return createGoogleGenerativeAI({ apiKey });
     case 'groq':
       return createGroq({ apiKey });
-    case 'openai':
-      return createOpenAI({ apiKey });
     case 'openrouter':
       return createOpenRouter({ apiKey });
     default:

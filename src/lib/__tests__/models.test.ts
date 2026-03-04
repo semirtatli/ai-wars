@@ -2,11 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { MODELS, PROVIDERS, getModelInfo, getModelsByProvider, EXAMPLE_TOPICS } from '@/lib/ai/models';
 
 describe('PROVIDERS', () => {
-  it('has all 4 providers', () => {
-    expect(Object.keys(PROVIDERS)).toHaveLength(4);
+  it('has all 3 providers', () => {
+    expect(Object.keys(PROVIDERS)).toHaveLength(3);
     expect(PROVIDERS.google).toBeDefined();
     expect(PROVIDERS.groq).toBeDefined();
-    expect(PROVIDERS.openai).toBeDefined();
     expect(PROVIDERS.openrouter).toBeDefined();
   });
 

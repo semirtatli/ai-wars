@@ -4,7 +4,10 @@
  * Central registry of all available AI models with their metadata.
  * Used by the UI for model selection cards and by the API for validation.
  *
- * All models listed here are 100% FREE tier — no payment methods attached.
+ * Models are served through 3 providers:
+ * - Google: Direct Gemini API (fast, free tier)
+ * - Groq: Ultra-fast LPU inference for open models (free tier)
+ * - OpenRouter: Gateway to 100+ models (Claude, GPT, Qwen, Mistral, etc.)
  */
 
 import type { ModelInfo, ProviderInfo } from '@/types';
@@ -23,12 +26,6 @@ export const PROVIDERS: Record<string, ProviderInfo> = {
     url: 'https://groq.com',
     color: '#F55036',
   },
-  openai: {
-    id: 'openai',
-    name: 'OpenAI',
-    url: 'https://platform.openai.com',
-    color: '#10A37F',
-  },
   openrouter: {
     id: 'openrouter',
     name: 'OpenRouter',
@@ -39,12 +36,12 @@ export const PROVIDERS: Record<string, ProviderInfo> = {
 
 /** All available models with metadata */
 export const MODELS: ModelInfo[] = [
-  // ── Google Gemini ─────────────────────────────────────────
+  // ── Google Gemini (direct) ────────────────────────────────
   {
     id: 'gemini-2.0-flash',
     name: 'Gemini 2.0 Flash',
     provider: 'google',
-    description: 'Google\'s most capable model. Fast, multimodal, excellent reasoning.',
+    description: 'Google\'s latest model. Fast, multimodal, excellent reasoning.',
     capability: 5,
     speed: 'fast',
     sdkModelId: 'gemini-2.0-flash',
@@ -58,26 +55,8 @@ export const MODELS: ModelInfo[] = [
     speed: 'fast',
     sdkModelId: 'gemini-1.5-flash',
   },
-  // ── OpenAI ────────────────────────────────────────────────
-  {
-    id: 'gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    provider: 'openai',
-    description: 'OpenAI\'s efficient model. Great balance of speed and quality.',
-    capability: 4,
-    speed: 'fast',
-    sdkModelId: 'gpt-4o-mini',
-  },
-  {
-    id: 'gpt-4o',
-    name: 'GPT-4o',
-    provider: 'openai',
-    description: 'OpenAI\'s flagship model. Top-tier reasoning and creativity.',
-    capability: 5,
-    speed: 'medium',
-    sdkModelId: 'gpt-4o',
-  },
-  // ── Groq ──────────────────────────────────────────────────
+
+  // ── Groq (ultra-fast inference) ───────────────────────────
   {
     id: 'llama-3.3-70b',
     name: 'Llama 3.3 70B',
@@ -105,7 +84,112 @@ export const MODELS: ModelInfo[] = [
     speed: 'fast',
     sdkModelId: 'gemma2-9b-it',
   },
-  // ── OpenRouter ────────────────────────────────────────────
+
+  // ── OpenRouter (gateway to many providers) ────────────────
+
+  // Claude (Anthropic)
+  {
+    id: 'claude-3.5-haiku',
+    name: 'Claude 3.5 Haiku',
+    provider: 'openrouter',
+    description: 'Anthropic\'s fast, affordable model. Great at following instructions.',
+    capability: 4,
+    speed: 'fast',
+    sdkModelId: 'anthropic/claude-3.5-haiku',
+  },
+  {
+    id: 'claude-3.5-sonnet',
+    name: 'Claude 3.5 Sonnet',
+    provider: 'openrouter',
+    description: 'Anthropic\'s flagship. Top-tier reasoning, writing, and analysis.',
+    capability: 5,
+    speed: 'medium',
+    sdkModelId: 'anthropic/claude-3.5-sonnet',
+  },
+
+  // GPT (OpenAI via OpenRouter)
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    provider: 'openrouter',
+    description: 'OpenAI\'s efficient model. Great balance of speed and quality.',
+    capability: 4,
+    speed: 'fast',
+    sdkModelId: 'openai/gpt-4o-mini',
+  },
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    provider: 'openrouter',
+    description: 'OpenAI\'s flagship model. Top-tier reasoning and creativity.',
+    capability: 5,
+    speed: 'medium',
+    sdkModelId: 'openai/gpt-4o',
+  },
+
+  // Qwen (Alibaba)
+  {
+    id: 'qwen-2.5-72b',
+    name: 'Qwen 2.5 72B',
+    provider: 'openrouter',
+    description: 'Alibaba\'s powerful model. Excellent multilingual and coding abilities.',
+    capability: 4,
+    speed: 'medium',
+    sdkModelId: 'qwen/qwen-2.5-72b-instruct',
+  },
+  {
+    id: 'qwen-2.5-coder-32b',
+    name: 'Qwen 2.5 Coder 32B',
+    provider: 'openrouter',
+    description: 'Specialized coding model from Alibaba. Strong at technical debates.',
+    capability: 4,
+    speed: 'fast',
+    sdkModelId: 'qwen/qwen-2.5-coder-32b-instruct',
+  },
+
+  // Mistral
+  {
+    id: 'mistral-large',
+    name: 'Mistral Large',
+    provider: 'openrouter',
+    description: 'Mistral\'s most capable model. Strong reasoning and multilingual.',
+    capability: 5,
+    speed: 'medium',
+    sdkModelId: 'mistralai/mistral-large',
+  },
+
+  // DeepSeek
+  {
+    id: 'deepseek-chat-v3',
+    name: 'DeepSeek V3',
+    provider: 'openrouter',
+    description: 'DeepSeek\'s latest chat model. Strong reasoning at low cost.',
+    capability: 4,
+    speed: 'medium',
+    sdkModelId: 'deepseek/deepseek-chat',
+  },
+  {
+    id: 'deepseek-r1',
+    name: 'DeepSeek R1',
+    provider: 'openrouter',
+    description: 'DeepSeek\'s reasoning model. Chain-of-thought for complex arguments.',
+    capability: 5,
+    speed: 'slow',
+    sdkModelId: 'deepseek/deepseek-r1',
+  },
+
+  // Google Gemini (via OpenRouter — free tier)
+  {
+    id: 'openrouter-gemini-flash',
+    name: 'Gemini 2.0 Flash (Free)',
+    provider: 'openrouter',
+    description: 'Google Gemini via OpenRouter. Free access with generous limits.',
+    capability: 5,
+    speed: 'fast',
+    sdkModelId: 'google/gemini-2.0-flash-exp:free',
+  },
+
+  // Meta Llama (via OpenRouter — free tier)
   {
     id: 'openrouter-llama-3.3-70b',
     name: 'Llama 3.3 70B (Free)',
@@ -114,15 +198,6 @@ export const MODELS: ModelInfo[] = [
     capability: 4,
     speed: 'medium',
     sdkModelId: 'meta-llama/llama-3.3-70b-instruct:free',
-  },
-  {
-    id: 'openrouter-gemini-flash',
-    name: 'Gemini 2.0 Flash (Free)',
-    provider: 'openrouter',
-    description: 'Google Gemini via OpenRouter. Free access.',
-    capability: 5,
-    speed: 'fast',
-    sdkModelId: 'google/gemini-2.0-flash-exp:free',
   },
 ];
 

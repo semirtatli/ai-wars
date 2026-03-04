@@ -6,7 +6,7 @@
  */
 
 /** Supported AI provider identifiers */
-export type ProviderId = 'google' | 'groq' | 'openai' | 'openrouter';
+export type ProviderId = 'google' | 'groq' | 'openrouter';
 
 /** Battle state machine states */
 export type BattleStatus =
