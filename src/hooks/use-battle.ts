@@ -93,11 +93,20 @@ export function useBattle() {
         });
       }
 
-      // If this is the first turn, add the topic as the first user message
+      // If this is the first turn or no recent messages, add the topic as the user message
       if (recentMessages.length === 0) {
         conversationMessages.push({
           role: 'user',
           content: `The debate topic is: "${config.topic}". Please present your opening argument.`,
+        });
+      }
+
+      // Safety: ensure the last message is always a 'user' message with non-empty content
+      const lastMsg = conversationMessages[conversationMessages.length - 1];
+      if (lastMsg && lastMsg.role !== 'user') {
+        conversationMessages.push({
+          role: 'user',
+          content: `Continue the debate on: "${config.topic}". Respond to the arguments above.`,
         });
       }
 
@@ -259,6 +268,11 @@ export function useBattle() {
         );
 
         if (!messageA) return; // Aborted
+
+        // Guard: If Model A returned empty content, treat as error
+        if (!messageA.content.trim()) {
+          throw new Error('Model A returned an empty response. The AI provider may be temporarily unavailable.');
+        }
 
         const argsA = extractArguments(messageA.content);
         setState((s) => ({
