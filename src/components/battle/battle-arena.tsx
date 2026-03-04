@@ -22,7 +22,6 @@ export function BattleArena() {
   const { state, startBattle, applyAction, stopBattle, resetBattle } = useBattle();
 
   // Parse battle config from URL params
-  // API keys are read from localStorage (never in URL)
   const config: BattleConfig | null = useMemo(() => {
     const modelA = searchParams.get('modelA');
     const modelB = searchParams.get('modelB');
@@ -32,18 +31,7 @@ export function BattleArena() {
 
     if (!modelA || !modelB || !topic) return null;
 
-    // Read API keys from localStorage
-    const apiKeys: Record<string, string> = {};
-    for (const key of ['google', 'groq', 'openai', 'openrouter']) {
-      const saved = typeof window !== 'undefined'
-        ? localStorage.getItem(`ai-wars-key-${key}`)
-        : null;
-      if (saved) {
-        apiKeys[key] = saved;
-      }
-    }
-
-    return { modelA, modelB, topic, maxTurns, responseLength, apiKeys };
+    return { modelA, modelB, topic, maxTurns, responseLength };
   }, [searchParams]);
 
   // Auto-start battle when config is available

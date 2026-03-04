@@ -1,61 +1,36 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Swords, Sparkles } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Swords, Sparkles, LogIn } from 'lucide-react';
+import Link from 'next/link';
 
 import { ModelSelector } from './model-selector';
 import { TopicInput } from './topic-input';
 import { RoundConfig } from './round-config';
-import { ApiKeyInput } from './api-key-input';
-import { MODELS } from '@/lib/ai/models';
-import type { ResponseLength, ProviderId } from '@/types';
+import type { ResponseLength } from '@/types';
 import { cn } from '@/lib/utils';
 
 /**
  * Main setup form that combines all configuration components.
- * Validates all fields and navigates to the battle page with config as URL params.
- * API keys are stored in localStorage and NOT included in the URL.
+ * Requires authentication. Validates all fields and navigates to battle page.
  */
 export function SetupForm() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const [modelA, setModelA] = useState<string | null>(null);
   const [modelB, setModelB] = useState<string | null>(null);
   const [topic, setTopic] = useState('');
   const [maxTurns, setMaxTurns] = useState(5);
   const [responseLength, setResponseLength] = useState<ResponseLength>('medium');
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
-  // Determine which providers are needed based on selected models
-  const requiredProviders = useMemo<ProviderId[]>(() => {
-    const providers: ProviderId[] = [];
-    if (modelA) {
-      const model = MODELS.find((m) => m.id === modelA);
-      if (model) providers.push(model.provider);
-    }
-    if (modelB) {
-      const model = MODELS.find((m) => m.id === modelB);
-      if (model) providers.push(model.provider);
-    }
-    return providers;
-  }, [modelA, modelB]);
-
-  // Check all required provider keys are present
-  const hasAllKeys = requiredProviders.length > 0 &&
-    requiredProviders.every((p) => apiKeys[p]?.trim());
-
-  const isValid = modelA && modelB && modelA !== modelB && topic.trim().length > 5 && hasAllKeys;
-
-  const handleKeysChange = useCallback((keys: Record<string, string>) => {
-    setApiKeys(keys);
-  }, []);
+  const isValid = modelA && modelB && modelA !== modelB && topic.trim().length > 5;
 
   const handleStart = () => {
     if (!isValid) return;
 
-    // Only pass non-sensitive config in URL params
-    // API keys are read from localStorage by the battle arena
     const params = new URLSearchParams({
       modelA: modelA,
       modelB: modelB,
@@ -66,6 +41,45 @@ export function SetupForm() {
 
     router.push(`/battle?${params.toString()}`);
   };
+
+  // Show loading state while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-white" />
+      </div>
+    );
+  }
+
+  // Show sign-in prompt if not authenticated
+  if (!session?.user) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-8 px-4 py-8 sm:px-6">
+        <div className="text-center">
+          <h1 className="mb-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            <span className="text-blue-400">AI</span> vs{' '}
+            <span className="text-red-400">AI</span>
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg text-zinc-400">
+            Pick two AI models, give them a topic, and watch them debate.
+            You control the flow — continue, redirect, or intensify the argument.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
+          <LogIn className="h-10 w-10 text-zinc-500" />
+          <p className="text-lg font-medium text-zinc-300">Sign in to start battling</p>
+          <p className="text-sm text-zinc-500">Use Google or GitHub to log in instantly</p>
+          <Link
+            href="/login"
+            className="mt-2 rounded-xl bg-gradient-to-r from-blue-600 to-red-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-4 py-8 sm:px-6">
@@ -123,12 +137,6 @@ export function SetupForm() {
         onResponseLengthChange={setResponseLength}
       />
 
-      {/* API Key inputs */}
-      <ApiKeyInput
-        requiredProviders={requiredProviders}
-        onKeysChange={handleKeysChange}
-      />
-
       {/* Start button */}
       <div className="flex justify-center">
         <button
@@ -153,8 +161,7 @@ export function SetupForm() {
           {!modelA && 'Select Model A · '}
           {!modelB && 'Select Model B · '}
           {modelA && modelB && modelA === modelB && 'Models must be different · '}
-          {topic.trim().length <= 5 && 'Enter a topic (at least 6 chars) · '}
-          {!hasAllKeys && requiredProviders.length > 0 && 'Enter API key(s) for selected providers'}
+          {topic.trim().length <= 5 && 'Enter a topic (at least 6 chars)'}
         </div>
       )}
     </div>

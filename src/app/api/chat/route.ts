@@ -3,21 +3,20 @@
  *
  * POST /api/chat
  *
- * Accepts a model ID, message history, and user-provided API key.
- * Returns a streaming text response.
- *
+ * Accepts a model ID and message history, returns a streaming text response.
  * Security layers (applied in order):
- * 1. Input validation (Zod schema + model whitelist)
- * 2. Route-level rate limiting (per-IP, sliding window)
- * 3. Streaming response with max_tokens limit
+ * 1. Authentication (OAuth session required)
+ * 2. Input validation (Zod schema + model whitelist)
+ * 3. Route-level rate limiting (per-IP, sliding window)
+ * 4. Streaming response with max_tokens limit
  *
- * The user provides their own API key per request.
- * Keys are used transiently and NEVER persisted or logged.
+ * API keys are stored server-side and never exposed to the client.
  */
 
 import { streamText } from 'ai';
 import { NextResponse } from 'next/server';
 
+import { auth } from '@/auth';
 import { getModel } from '@/lib/ai/providers';
 import { getChatLimiter, getClientIp, checkRateLimit } from '@/lib/security/rate-limiter';
 import { chatRequestSchema } from '@/lib/validators/chat';
@@ -27,7 +26,16 @@ export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {
-    // ── 1. Parse and validate request body ─────────────────────
+    // ── 1. Authentication ──────────────────────────────────────
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please sign in.' },
+        { status: 401 },
+      );
+    }
+
+    // ── 2. Parse and validate request body ─────────────────────
     const body: unknown = await request.json();
     const parsed = chatRequestSchema.safeParse(body);
 
@@ -41,9 +49,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { modelId, messages, apiKey, maxTokens } = parsed.data;
+    const { modelId, messages, maxTokens } = parsed.data;
 
-    // ── 2. Rate limiting ───────────────────────────────────────
+    // ── 3. Rate limiting ───────────────────────────────────────
     const clientIp = getClientIp(request);
     const limiter = getChatLimiter();
     const rateLimitResult = await checkRateLimit(clientIp, limiter);
@@ -63,10 +71,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── 3. Resolve model with user-provided key and stream ─────
+    // ── 4. Resolve model and stream response ───────────────
     let model;
     try {
-      model = getModel(modelId, apiKey);
+      model = getModel(modelId);
     } catch (modelError) {
       const msg = modelError instanceof Error ? modelError.message : 'Unknown model error';
       console.error(`[Chat API] getModel failed for ${modelId}:`, modelError);

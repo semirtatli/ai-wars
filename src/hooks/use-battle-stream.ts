@@ -7,7 +7,7 @@
  * Returns the accumulated text and streaming status.
  *
  * Architecture:
- * - Sends a POST to /api/chat with model ID, messages, and user-provided API key
+ * - Sends a POST to /api/chat with model ID and messages
  * - Reads the streaming response chunk by chunk using ReadableStream API
  * - Exposes real-time text accumulation and status
  */
@@ -17,7 +17,6 @@ import { useState, useCallback, useRef } from 'react';
 interface StreamOptions {
   modelId: string;
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
-  apiKey: string;
   maxTokens: number;
   onChunk?: (chunk: string) => void;
   onComplete?: (fullText: string) => void;
@@ -40,7 +39,7 @@ export function useBattleStream() {
   const abortRef = useRef<AbortController | null>(null);
 
   const startStream = useCallback(async (options: StreamOptions) => {
-    const { modelId, messages, apiKey, maxTokens, onChunk, onComplete, onError } = options;
+    const { modelId, messages, maxTokens, onChunk, onComplete, onError } = options;
 
     // Abort any existing stream
     abortRef.current?.abort();
@@ -52,7 +51,7 @@ export function useBattleStream() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelId, messages, apiKey, maxTokens }),
+        body: JSON.stringify({ modelId, messages, maxTokens }),
         signal: abortRef.current.signal,
       });
 

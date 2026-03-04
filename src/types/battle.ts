@@ -58,8 +58,7 @@ export interface BattleConfig {
   maxTurns: number;
   /** Response length preference */
   responseLength: ResponseLength;
-  /** User-provided API keys per provider (provider ID → key) */
-  apiKeys: Record<string, string>;
+
 }
 
 /** Full battle state */

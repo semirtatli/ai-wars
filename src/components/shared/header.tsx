@@ -4,8 +4,10 @@ import { Swords, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
+import { UserMenu } from '@/components/auth/user-menu';
+
 /**
- * Site header with logo, title, and theme toggle.
+ * Site header with logo, title, user menu, and theme toggle.
  * Client component for theme switching interactivity.
  */
 export function Header() {
@@ -21,13 +23,16 @@ export function Header() {
           </span>
         </Link>
 
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

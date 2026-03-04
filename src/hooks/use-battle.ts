@@ -31,7 +31,6 @@ import type {
 } from '@/types';
 import { buildSystemPrompt, MAX_TOKENS_MAP } from '@/lib/ai/prompts';
 import { generateId, extractArguments } from '@/lib/utils';
-import { MODELS } from '@/lib/ai/models';
 
 const INITIAL_STATE: BattleState = {
   status: 'idle',
@@ -164,17 +163,12 @@ export function useBattle() {
       abortRef.current = new AbortController();
 
       try {
-        // Determine which provider this model uses to get the right API key
-        const modelInfo = MODELS.find((m) => m.id === modelId);
-        const apiKey = modelInfo ? (config.apiKeys[modelInfo.provider] ?? '') : '';
-
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             modelId,
             messages,
-            apiKey,
             maxTokens,
           }),
           signal: abortRef.current.signal,
