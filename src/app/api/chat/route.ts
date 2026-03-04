@@ -73,23 +73,46 @@ export async function POST(request: Request) {
     }
 
     // ── 4. Resolve model and stream response ───────────────────
-    const model = getModel(modelId);
+    let model;
+    try {
+      model = getModel(modelId);
+    } catch (modelError) {
+      const msg = modelError instanceof Error ? modelError.message : 'Unknown model error';
+      console.error(`[Chat API] getModel failed for ${modelId}:`, modelError);
+      return NextResponse.json({ error: `Model error: ${msg}` }, { status: 400 });
+    }
 
-    const result = streamText({
-      model,
-      messages,
-      maxOutputTokens: maxTokens,
-      temperature: 0.8,
-    });
+    let result;
+    try {
+      result = streamText({
+        model,
+        messages,
+        maxOutputTokens: maxTokens,
+        temperature: 0.8,
+      });
+    } catch (streamInitError) {
+      const msg = streamInitError instanceof Error ? streamInitError.message : 'Stream init failed';
+      console.error(`[Chat API] streamText init failed for ${modelId}:`, streamInitError);
+      return NextResponse.json({ error: `Stream init error: ${msg}` }, { status: 500 });
+    }
 
     // Manually pipe the text stream so provider errors are surfaced to the client
     // instead of silently producing an empty 200 response.
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
       async start(controller) {
+        let hasChunks = false;
         try {
           for await (const chunk of result.textStream) {
+            hasChunks = true;
             controller.enqueue(encoder.encode(chunk));
+          }
+          // If the provider returned zero chunks, surface that as an error
+          if (!hasChunks) {
+            console.error(`[Chat API] Empty stream from model ${modelId} — no chunks received`);
+            controller.enqueue(
+              encoder.encode(`[ERROR]: AI provider returned empty response for model ${modelId}. The API key may be invalid or the provider may be down.`),
+            );
           }
           controller.close();
         } catch (streamError) {
@@ -97,7 +120,7 @@ export async function POST(request: Request) {
             streamError instanceof Error ? streamError.message : 'AI provider stream failed';
           console.error(`[Chat API] Stream error for model ${modelId}:`, streamError);
           // Send the error as text so the client can display it
-          controller.enqueue(encoder.encode(`\n[ERROR]: ${errMsg}`));
+          controller.enqueue(encoder.encode(`[ERROR]: ${errMsg}`));
           controller.close();
         }
       },
