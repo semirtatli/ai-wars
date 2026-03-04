@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { Zap, Brain, ChevronDown } from 'lucide-react';
-import { MODELS, PROVIDERS } from '@/lib/ai/models';
-import type { ModelInfo } from '@/types';
+import type { ModelInfo, ProviderInfo } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface ModelSelectorProps {
@@ -17,6 +16,10 @@ interface ModelSelectorProps {
   excludeModelId?: string | null;
   /** Side color theme */
   side: 'a' | 'b';
+  /** Available models (only those with configured provider keys) */
+  models: ModelInfo[];
+  /** Available providers */
+  providers: Record<string, ProviderInfo>;
 }
 
 /** Star rating display */
@@ -63,9 +66,11 @@ export function ModelSelector({
   onSelect,
   excludeModelId,
   side,
+  models,
+  providers,
 }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const selectedModel = MODELS.find((m) => m.id === selectedModelId);
+  const selectedModel = models.find((m) => m.id === selectedModelId);
 
   const sideStyles = {
     a: {
@@ -107,7 +112,7 @@ export function ModelSelector({
             <div>
               <p className="font-medium text-white">{selectedModel.name}</p>
               <p className="text-xs text-zinc-500">
-                {PROVIDERS[selectedModel.provider]?.name}
+                {providers[selectedModel.provider]?.name ?? selectedModel.provider}
               </p>
             </div>
           </div>
@@ -122,8 +127,8 @@ export function ModelSelector({
       {/* Dropdown menu */}
       {isOpen && (
         <div className="absolute z-50 mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-900 p-2 shadow-2xl">
-          {Object.entries(PROVIDERS).map(([providerId, provider]) => {
-            const providerModels = MODELS.filter(
+          {Object.entries(providers).map(([providerId, provider]) => {
+            const providerModels = models.filter(
               (m) => m.provider === providerId && m.id !== excludeModelId,
             );
             if (providerModels.length === 0) return null;
@@ -133,7 +138,7 @@ export function ModelSelector({
                 <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   {provider.name}
                 </p>
-                {providerModels.map((model) => (
+                {providerModels.map((model: ModelInfo) => (
                   <button
                     key={model.id}
                     onClick={() => {

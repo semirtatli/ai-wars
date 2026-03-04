@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Swords, Sparkles, LogIn } from 'lucide-react';
@@ -9,12 +9,12 @@ import Link from 'next/link';
 import { ModelSelector } from './model-selector';
 import { TopicInput } from './topic-input';
 import { RoundConfig } from './round-config';
-import type { ResponseLength } from '@/types';
+import type { ModelInfo, ProviderInfo, ResponseLength } from '@/types';
 import { cn } from '@/lib/utils';
 
 /**
  * Main setup form that combines all configuration components.
- * Requires authentication. Validates all fields and navigates to battle page.
+ * Requires authentication. Fetches available models from the server.
  */
 export function SetupForm() {
   const router = useRouter();
@@ -25,6 +25,24 @@ export function SetupForm() {
   const [topic, setTopic] = useState('');
   const [maxTurns, setMaxTurns] = useState(5);
   const [responseLength, setResponseLength] = useState<ResponseLength>('medium');
+
+  // Fetch available models (only those with configured provider keys)
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  const [providers, setProviders] = useState<Record<string, ProviderInfo>>({});
+  const [modelsLoading, setModelsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/models')
+      .then((res) => res.json())
+      .then((data: { models: ModelInfo[]; providers: Record<string, ProviderInfo> }) => {
+        setModels(data.models);
+        setProviders(data.providers);
+      })
+      .catch(() => {
+        // If fetch fails, models stay empty
+      })
+      .finally(() => setModelsLoading(false));
+  }, []);
 
   const isValid = modelA && modelB && modelA !== modelB && topic.trim().length > 5;
 
@@ -42,8 +60,8 @@ export function SetupForm() {
     router.push(`/battle?${params.toString()}`);
   };
 
-  // Show loading state while checking auth
-  if (status === 'loading') {
+  // Show loading state while checking auth or fetching models
+  if (status === 'loading' || modelsLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-white" />
@@ -96,6 +114,12 @@ export function SetupForm() {
       </div>
 
       {/* Model selection — VS layout */}
+      {models.length === 0 ? (
+        <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-6 text-center">
+          <p className="text-yellow-400 font-medium">No AI models available</p>
+          <p className="text-sm text-zinc-500 mt-1">The server has no AI provider keys configured. Please contact the admin.</p>
+        </div>
+      ) : (
       <div className="grid gap-4 sm:grid-cols-[1fr,auto,1fr] sm:items-start">
         <ModelSelector
           label="Model A"
@@ -103,6 +127,8 @@ export function SetupForm() {
           onSelect={setModelA}
           excludeModelId={modelB}
           side="a"
+          models={models}
+          providers={providers}
         />
 
         <div className="hidden items-center justify-center pt-10 sm:flex">
@@ -123,8 +149,11 @@ export function SetupForm() {
           onSelect={setModelB}
           excludeModelId={modelA}
           side="b"
+          models={models}
+          providers={providers}
         />
       </div>
+      )}
 
       {/* Topic input */}
       <TopicInput value={topic} onChange={setTopic} />
