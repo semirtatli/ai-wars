@@ -80,12 +80,35 @@ export async function POST(request: Request) {
       messages,
       maxOutputTokens: maxTokens,
       temperature: 0.8,
-      onError: ({ error }) => {
-        console.error(`[Chat API] Stream error for model ${modelId}:`, error);
+    });
+
+    // Manually pipe the text stream so provider errors are surfaced to the client
+    // instead of silently producing an empty 200 response.
+    const encoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(encoder.encode(chunk));
+          }
+          controller.close();
+        } catch (streamError) {
+          const errMsg =
+            streamError instanceof Error ? streamError.message : 'AI provider stream failed';
+          console.error(`[Chat API] Stream error for model ${modelId}:`, streamError);
+          // Send the error as text so the client can display it
+          controller.enqueue(encoder.encode(`\n[ERROR]: ${errMsg}`));
+          controller.close();
+        }
       },
     });
 
-    return result.toTextStreamResponse();
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
   } catch (error) {
     console.error('[Chat API] Unhandled error:', error);
 
