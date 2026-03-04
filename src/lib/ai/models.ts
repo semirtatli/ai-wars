@@ -23,11 +23,11 @@ export const PROVIDERS: Record<string, ProviderInfo> = {
     url: 'https://groq.com',
     color: '#F55036',
   },
-  github: {
-    id: 'github',
-    name: 'GitHub Models',
-    url: 'https://github.com/marketplace/models',
-    color: '#8B5CF6',
+  openai: {
+    id: 'openai',
+    name: 'OpenAI',
+    url: 'https://platform.openai.com',
+    color: '#10A37F',
   },
   openrouter: {
     id: 'openrouter',
@@ -39,33 +39,45 @@ export const PROVIDERS: Record<string, ProviderInfo> = {
 
 /** All available models with metadata */
 export const MODELS: ModelInfo[] = [
+  // ── Google Gemini ─────────────────────────────────────────
   {
     id: 'gemini-2.0-flash',
     name: 'Gemini 2.0 Flash',
     provider: 'google',
-    description: 'Google\'s most capable free model. Fast, multimodal, excellent reasoning.',
+    description: 'Google\'s most capable model. Fast, multimodal, excellent reasoning.',
     capability: 5,
     speed: 'fast',
     sdkModelId: 'gemini-2.0-flash',
   },
   {
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash',
+    provider: 'google',
+    description: 'Fast and efficient. Great for quick debates with solid quality.',
+    capability: 4,
+    speed: 'fast',
+    sdkModelId: 'gemini-1.5-flash',
+  },
+  // ── OpenAI ────────────────────────────────────────────────
+  {
     id: 'gpt-4o-mini',
     name: 'GPT-4o Mini',
-    provider: 'github',
-    description: 'OpenAI\'s efficient model via GitHub. Great balance of speed and quality.',
+    provider: 'openai',
+    description: 'OpenAI\'s efficient model. Great balance of speed and quality.',
     capability: 4,
-    speed: 'medium',
+    speed: 'fast',
     sdkModelId: 'gpt-4o-mini',
   },
   {
     id: 'gpt-4o',
     name: 'GPT-4o',
-    provider: 'github',
-    description: 'OpenAI\'s flagship model via GitHub. Top-tier reasoning and creativity.',
+    provider: 'openai',
+    description: 'OpenAI\'s flagship model. Top-tier reasoning and creativity.',
     capability: 5,
     speed: 'medium',
     sdkModelId: 'gpt-4o',
   },
+  // ── Groq ──────────────────────────────────────────────────
   {
     id: 'llama-3.3-70b',
     name: 'Llama 3.3 70B',
@@ -93,32 +105,24 @@ export const MODELS: ModelInfo[] = [
     speed: 'fast',
     sdkModelId: 'gemma2-9b-it',
   },
+  // ── OpenRouter ────────────────────────────────────────────
   {
-    id: 'deepseek-r1-70b',
-    name: 'DeepSeek R1 70B',
-    provider: 'groq',
-    description: 'DeepSeek\'s reasoning model. Strong analytical and logical capabilities.',
+    id: 'openrouter-llama-3.3-70b',
+    name: 'Llama 3.3 70B (Free)',
+    provider: 'openrouter',
+    description: 'Meta Llama 3.3 via OpenRouter. Free access with generous limits.',
     capability: 4,
+    speed: 'medium',
+    sdkModelId: 'meta-llama/llama-3.3-70b-instruct:free',
+  },
+  {
+    id: 'openrouter-gemini-flash',
+    name: 'Gemini 2.0 Flash (Free)',
+    provider: 'openrouter',
+    description: 'Google Gemini via OpenRouter. Free access.',
+    capability: 5,
     speed: 'fast',
-    sdkModelId: 'deepseek-r1-distill-llama-70b',
-  },
-  {
-    id: 'openrouter-gpt-oss',
-    name: 'GPT-4o Mini (Free)',
-    provider: 'openrouter',
-    description: 'GPT-4o Mini via OpenRouter. Free access with lower rate limits.',
-    capability: 4,
-    speed: 'medium',
-    sdkModelId: 'openai/gpt-4o-mini:free',
-  },
-  {
-    id: 'openrouter-nemotron',
-    name: 'Nemotron 70B',
-    provider: 'openrouter',
-    description: 'NVIDIA\'s Nemotron model. Strong instruction following and reasoning.',
-    capability: 4,
-    speed: 'medium',
-    sdkModelId: 'nvidia/llama-3.1-nemotron-70b-instruct:free',
+    sdkModelId: 'google/gemini-2.0-flash-exp:free',
   },
 ];
 

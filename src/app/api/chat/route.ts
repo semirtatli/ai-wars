@@ -3,14 +3,16 @@
  *
  * POST /api/chat
  *
- * Accepts a model ID and message history, returns a streaming text response.
- * Security layers (applied in order):
- * 1. Turnstile token verification (bot protection)
- * 2. Route-level rate limiting (per-IP, sliding window)
- * 3. Input validation (Zod schema + model whitelist)
- * 4. Streaming response with max_tokens limit
+ * Accepts a model ID, message history, and user-provided API key.
+ * Returns a streaming text response.
  *
- * The API key is resolved server-side — NEVER exposed to the client.
+ * Security layers (applied in order):
+ * 1. Input validation (Zod schema + model whitelist)
+ * 2. Route-level rate limiting (per-IP, sliding window)
+ * 3. Streaming response with max_tokens limit
+ *
+ * The user provides their own API key per request.
+ * Keys are used transiently and NEVER persisted or logged.
  */
 
 import { streamText } from 'ai';
@@ -18,7 +20,6 @@ import { NextResponse } from 'next/server';
 
 import { getModel } from '@/lib/ai/providers';
 import { getChatLimiter, getClientIp, checkRateLimit } from '@/lib/security/rate-limiter';
-import { verifyTurnstileToken } from '@/lib/security/turnstile';
 import { chatRequestSchema } from '@/lib/validators/chat';
 
 /** Allow streaming responses up to 30 seconds on Vercel */
@@ -40,20 +41,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const { modelId, messages, turnstileToken, maxTokens } = parsed.data;
+    const { modelId, messages, apiKey, maxTokens } = parsed.data;
 
-    // ── 2. Verify Turnstile token (bot protection) ─────────────
+    // ── 2. Rate limiting ───────────────────────────────────────
     const clientIp = getClientIp(request);
-    const isHuman = await verifyTurnstileToken(turnstileToken, clientIp);
-
-    if (!isHuman) {
-      return NextResponse.json(
-        { error: 'Turnstile verification failed. Please try again.' },
-        { status: 403 },
-      );
-    }
-
-    // ── 3. Rate limiting ───────────────────────────────────────
     const limiter = getChatLimiter();
     const rateLimitResult = await checkRateLimit(clientIp, limiter);
 
@@ -72,10 +63,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── 4. Resolve model and stream response ───────────────────
+    // ── 3. Resolve model with user-provided key and stream ─────
     let model;
     try {
-      model = getModel(modelId);
+      model = getModel(modelId, apiKey);
     } catch (modelError) {
       const msg = modelError instanceof Error ? modelError.message : 'Unknown model error';
       console.error(`[Chat API] getModel failed for ${modelId}:`, modelError);

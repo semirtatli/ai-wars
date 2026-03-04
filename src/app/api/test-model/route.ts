@@ -1,5 +1,5 @@
 /**
- * Debug Test — GET /api/test-model?model=gemini-2.0-flash
+ * Debug Test — GET /api/test-model?model=gemini-2.0-flash&key=YOUR_API_KEY
  *
  * Non-streaming call to test if a model + API key actually works.
  * Uses generateText (not streamText) to isolate streaming issues.
@@ -13,9 +13,17 @@ import { getModel } from '@/lib/ai/providers';
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const modelId = url.searchParams.get('model') ?? 'gemini-2.0-flash';
+  const apiKey = url.searchParams.get('key') ?? '';
+
+  if (!apiKey) {
+    return NextResponse.json(
+      { success: false, error: 'Missing "key" query parameter. Pass your API key.' },
+      { status: 400 },
+    );
+  }
 
   try {
-    const model = getModel(modelId);
+    const model = getModel(modelId, apiKey);
 
     const result = await generateText({
       model,

@@ -6,7 +6,7 @@
  */
 
 /** Supported AI provider identifiers */
-export type ProviderId = 'google' | 'groq' | 'github' | 'openrouter';
+export type ProviderId = 'google' | 'groq' | 'openai' | 'openrouter';
 
 /** Battle state machine states */
 export type BattleStatus =
@@ -58,8 +58,8 @@ export interface BattleConfig {
   maxTurns: number;
   /** Response length preference */
   responseLength: ResponseLength;
-  /** Cloudflare Turnstile token for verification */
-  turnstileToken: string;
+  /** User-provided API keys per provider (provider ID → key) */
+  apiKeys: Record<string, string>;
 }
 
 /** Full battle state */

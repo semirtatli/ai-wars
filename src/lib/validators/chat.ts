@@ -10,7 +10,7 @@ import { getValidModelIds } from '@/lib/ai/providers';
 
 /**
  * Schema for the /api/chat POST request body.
- * Validates model ID against the whitelist, message format, and metadata.
+ * Validates model ID against the whitelist, message format, API key, and metadata.
  */
 export const chatRequestSchema = z.object({
   /** Model ID — must be in the whitelist */
@@ -27,8 +27,8 @@ export const chatRequestSchema = z.object({
     }),
   ).min(1, 'At least one message is required').max(50, 'Too many messages (max 50)'),
 
-  /** Cloudflare Turnstile verification token */
-  turnstileToken: z.string().min(1, 'Turnstile token is required'),
+  /** User-provided API key for the model's provider */
+  apiKey: z.string().min(1, 'API key is required'),
 
   /** Max tokens for the response */
   maxTokens: z.number().int().min(100).max(1000).optional().default(400),

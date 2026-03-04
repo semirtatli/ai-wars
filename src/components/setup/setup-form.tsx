@@ -1,19 +1,21 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Swords, Sparkles } from 'lucide-react';
 
 import { ModelSelector } from './model-selector';
 import { TopicInput } from './topic-input';
 import { RoundConfig } from './round-config';
-import { TurnstileWidget } from '@/components/turnstile';
-import type { ResponseLength } from '@/types';
+import { ApiKeyInput } from './api-key-input';
+import { MODELS } from '@/lib/ai/models';
+import type { ResponseLength, ProviderId } from '@/types';
 import { cn } from '@/lib/utils';
 
 /**
  * Main setup form that combines all configuration components.
  * Validates all fields and navigates to the battle page with config as URL params.
+ * API keys are stored in localStorage and NOT included in the URL.
  */
 export function SetupForm() {
   const router = useRouter();
@@ -23,25 +25,43 @@ export function SetupForm() {
   const [topic, setTopic] = useState('');
   const [maxTurns, setMaxTurns] = useState(5);
   const [responseLength, setResponseLength] = useState<ResponseLength>('medium');
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
-  const isValid = modelA && modelB && modelA !== modelB && topic.trim().length > 5 && turnstileToken;
+  // Determine which providers are needed based on selected models
+  const requiredProviders = useMemo<ProviderId[]>(() => {
+    const providers: ProviderId[] = [];
+    if (modelA) {
+      const model = MODELS.find((m) => m.id === modelA);
+      if (model) providers.push(model.provider);
+    }
+    if (modelB) {
+      const model = MODELS.find((m) => m.id === modelB);
+      if (model) providers.push(model.provider);
+    }
+    return providers;
+  }, [modelA, modelB]);
 
-  const handleTurnstileVerify = useCallback((token: string) => {
-    setTurnstileToken(token);
+  // Check all required provider keys are present
+  const hasAllKeys = requiredProviders.length > 0 &&
+    requiredProviders.every((p) => apiKeys[p]?.trim());
+
+  const isValid = modelA && modelB && modelA !== modelB && topic.trim().length > 5 && hasAllKeys;
+
+  const handleKeysChange = useCallback((keys: Record<string, string>) => {
+    setApiKeys(keys);
   }, []);
 
   const handleStart = () => {
     if (!isValid) return;
 
-    // Encode battle config as URL search params
+    // Only pass non-sensitive config in URL params
+    // API keys are read from localStorage by the battle arena
     const params = new URLSearchParams({
       modelA: modelA,
       modelB: modelB,
       topic: topic.trim(),
       maxTurns: maxTurns.toString(),
       responseLength,
-      turnstileToken: turnstileToken,
     });
 
     router.push(`/battle?${params.toString()}`);
@@ -103,13 +123,11 @@ export function SetupForm() {
         onResponseLengthChange={setResponseLength}
       />
 
-      {/* Turnstile verification */}
-      <div className="flex justify-center">
-        <TurnstileWidget
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? 'test'}
-          onVerify={handleTurnstileVerify}
-        />
-      </div>
+      {/* API Key inputs */}
+      <ApiKeyInput
+        requiredProviders={requiredProviders}
+        onKeysChange={handleKeysChange}
+      />
 
       {/* Start button */}
       <div className="flex justify-center">
@@ -136,7 +154,7 @@ export function SetupForm() {
           {!modelB && 'Select Model B · '}
           {modelA && modelB && modelA === modelB && 'Models must be different · '}
           {topic.trim().length <= 5 && 'Enter a topic (at least 6 chars) · '}
-          {!turnstileToken && 'Complete verification'}
+          {!hasAllKeys && requiredProviders.length > 0 && 'Enter API key(s) for selected providers'}
         </div>
       )}
     </div>
