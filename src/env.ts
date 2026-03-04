@@ -12,10 +12,10 @@ export const env = createEnv({
   server: {
     // ── Auth ──────────────────────────────────────────────
     AUTH_SECRET: z.string().min(1, 'AUTH_SECRET is required'),
-    AUTH_GOOGLE_ID: z.string().min(1, 'Google OAuth client ID is required'),
-    AUTH_GOOGLE_SECRET: z.string().min(1, 'Google OAuth client secret is required'),
-    AUTH_GITHUB_ID: z.string().min(1, 'GitHub OAuth client ID is required'),
-    AUTH_GITHUB_SECRET: z.string().min(1, 'GitHub OAuth client secret is required'),
+    AUTH_GOOGLE_ID: z.string().optional(),
+    AUTH_GOOGLE_SECRET: z.string().optional(),
+    AUTH_GITHUB_ID: z.string().optional(),
+    AUTH_GITHUB_SECRET: z.string().optional(),
 
     // ── AI Providers (optional — models hidden if key missing) ──
     GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),

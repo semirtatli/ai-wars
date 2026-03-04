@@ -7,11 +7,30 @@
  */
 
 import NextAuth from 'next-auth';
+import type { Provider } from 'next-auth/providers';
 import Google from 'next-auth/providers/google';
 import GitHub from 'next-auth/providers/github';
 
+/**
+ * Build providers list dynamically — only include providers
+ * whose credentials are actually configured.
+ */
+function getProviders(): Provider[] {
+  const providers: Provider[] = [];
+
+  if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+    providers.push(Google);
+  }
+  if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
+    providers.push(GitHub);
+  }
+
+  return providers;
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [Google, GitHub],
+  providers: getProviders(),
+  trustHost: true,
   pages: {
     signIn: '/login',
   },
